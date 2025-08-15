@@ -2,6 +2,7 @@ import Pengajuan from "../models/Pengajuan.js";
 import Owner from "../models/Owner.js";
 import Lahan from "../models/Lahan.js";
 import Document from "../models/Document.js";
+import User from "../models/User.js";
 import JenisPengajuan from "../models/JenisPengajuan.js";
 import Persyaratan from "../models/Persyaratan.js";
 import puppeteer from "puppeteer";
@@ -46,29 +47,39 @@ export const getAllPengajuan = async (req, res) => {
   if (req.user.role !== "admin") {
     whereClause = { user_id: req.user.id };
   }
+
   try {
-    const pengajuan = await Pengajuan.findAll({
+    const pengajuanList = await Pengajuan.findAll({
       where: whereClause,
-      include: [Owner, Lahan, Document, JenisPengajuan],
+      include: [User, Owner, Lahan, Document, JenisPengajuan],
     });
 
-    const groupedPengajuan = pengajuan.reduce((acc, currentPengajuan) => {
-      const userId = currentPengajuan.user_id;
-      if (!acc[userId]) {
-        acc[userId] = [];
+    // Group by user, tapi sertakan data user
+    const groupedByUser = pengajuanList.reduce((acc, pengajuan) => {
+      const user = pengajuan.User?.get({ plain: true });
+      if (!user) return acc; // skip jika tidak ada user
+
+      let existingUser = acc.find((u) => u.id === user.id);
+      if (!existingUser) {
+        existingUser = { ...user, pengajuan: [] };
+        acc.push(existingUser);
       }
-      const plainPengajuan = currentPengajuan.get({ plain: true });
+
+      const plainPengajuan = pengajuan.get({ plain: true });
       plainPengajuan.id_pengajuan = plainPengajuan.id;
       delete plainPengajuan.id;
-      acc[userId].push(plainPengajuan);
-      return acc;
-    }, {});
+      delete plainPengajuan.User; // hapus duplikasi user di dalam pengajuan
 
-    res.json(groupedPengajuan);
+      existingUser.pengajuan.push(plainPengajuan);
+      return acc;
+    }, []);
+
+    res.json(groupedByUser);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching pengajuan", error: error.message });
+    res.status(500).json({
+      message: "Error fetching pengajuan",
+      error: error.message,
+    });
   }
 };
 
