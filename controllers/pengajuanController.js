@@ -103,7 +103,22 @@ export const getPengajuanById = async (req, res) => {
 export const createPengajuan = async (req, res) => {
   const { jenis_pengajuan_id, owner, lahan, documents } = req.body;
   try {
-    // 1. Validate documents against persyaratan
+    // Negative case: Check for existing pending pengajuan of the same type for this user
+    const existingPendingPengajuan = await Pengajuan.findOne({
+      where: {
+        user_id: req.user.id,
+        jenis_pengajuan_id: jenis_pengajuan_id,
+        status: 'pending',
+      },
+    });
+
+    if (existingPendingPengajuan) {
+      return res.status(400).json({
+        message: "Anda sudah memiliki pengajuan dengan jenis yang sama yang masih dalam status pending. Harap selesaikan pengajuan sebelumnya atau tunggu hingga statusnya berubah."
+      });
+    }
+
+    // 1. Validate documents against persyaratan (existing logic)
     const requiredPersyaratan = await Persyaratan.findAll({
       where: { jenis_pengajuan_id },
       attributes: ['nama_dokument'],
@@ -118,7 +133,7 @@ export const createPengajuan = async (req, res) => {
     );
     if (missingDocuments.length > 0) {
       return res.status(400).json({
-        message: "Missing required documents",
+        message: "Dokumen yang diperlukan tidak lengkap.",
         missing: missingDocuments,
       });
     }
@@ -129,7 +144,7 @@ export const createPengajuan = async (req, res) => {
     );
     if (unexpectedDocuments.length > 0) {
       return res.status(400).json({
-        message: "Unexpected documents submitted",
+        message: "Terdapat dokumen yang tidak diperlukan.",
         unexpected: unexpectedDocuments,
       });
     }
@@ -155,9 +170,9 @@ export const createPengajuan = async (req, res) => {
       const docs = documents.map((d) => ({ ...d, pengajuan_id: pengajuan.id }));
       await Document.bulkCreate(docs);
     }
-    res.status(201).json({ message: "Pengajuan created", pengajuan });
+    res.status(201).json({ message: "Pengajuan berhasil dibuat", pengajuan }); // Changed success message
   } catch (error) {
-    res.status(400).json({ message: "Error creating pengajuan", error: error.message });
+    res.status(400).json({ message: "Terjadi kesalahan saat membuat pengajuan", error: error.message }); // Changed error message
   }
 };
 
