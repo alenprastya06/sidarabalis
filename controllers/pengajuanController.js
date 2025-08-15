@@ -5,6 +5,36 @@ import Document from "../models/Document.js";
 import JenisPengajuan from "../models/JenisPengajuan.js";
 import Persyaratan from "../models/Persyaratan.js"; // Import Persyaratan model
 
+// Helper function to update Pengajuan status based on its documents
+const updatePengajuanStatus = async (pengajuanId) => {
+  const documents = await Document.findAll({ where: { pengajuan_id: pengajuanId } });
+
+  let allApproved = true;
+  let anyRejected = false;
+
+  for (const doc of documents) {
+    if (doc.status === 'rejected') {
+      anyRejected = true;
+      break;
+    }
+    if (doc.status === 'pending') {
+      allApproved = false;
+    }
+  }
+
+  let newPengajuanStatus = 'pending';
+  if (anyRejected) {
+    newPengajuanStatus = 'rejected';
+  } else if (allApproved) {
+    newPengajuanStatus = 'approved';
+  }
+
+  const pengajuan = await Pengajuan.findByPk(pengajuanId);
+  if (pengajuan && pengajuan.status !== newPengajuanStatus) {
+    await pengajuan.update({ status: newPengajuanStatus });
+  }
+};
+
 // @desc    Get all pengajuan for a user or all for admin, grouped by user_id
 // @route   GET /api/pengajuan
 // @access  Private
@@ -52,7 +82,7 @@ export const getPengajuanUser = async (req, res) => {
 export const getPengajuanById = async (req, res) => {
   const pengajuan = await Pengajuan.findOne({
     where: { id: req.params.id },
-    include: [Owner, Lahan, Document, JenisPengajuan], // Include JenisPengajuan
+    include: [Owner, Lahan, Document, JenisPengajuan],
   });
 
   if (!pengajuan) {
@@ -195,5 +225,33 @@ export const deletePengajuan = async (req, res) => {
     res.json({ message: "Pengajuan deleted" });
   } catch (error) {
     res.status(500).json({ message: "Error deleting pengajuan", error: error.message });
+  }
+};
+
+// @desc    Update document status (admin only)
+// @route   PUT /api/pengajuan/documents/:id/status
+// @access  Private, Admin
+export const updateDocumentStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status, admin_note } = req.body; // Get admin_note from body
+
+  if (!['approved', 'rejected'].includes(status)) {
+    return res.status(400).json({ message: "Invalid status provided. Must be 'approved' or 'rejected'." });
+  }
+
+  try {
+    const document = await Document.findByPk(id);
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    await document.update({ status, admin_note }); // Update with admin_note
+
+    // Update parent pengajuan status
+    await updatePengajuanStatus(document.pengajuan_id);
+
+    res.json({ message: "Document status updated", document }); // Response already includes the updated document
+  } catch (error) {
+    res.status(400).json({ message: "Error updating document status", error: error.message });
   }
 };

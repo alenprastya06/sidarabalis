@@ -1,14 +1,14 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
 import User from "./User.js";
-import JenisPengajuan from "./JenisPengajuan.js"; // Import the new model
+import JenisPengajuan from "./JenisPengajuan.js";
 
 const Pengajuan = sequelize.define(
   "Pengajuan",
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     kode_pengajuan: { type: DataTypes.STRING, allowNull: false },
-    jenis_pengajuan_id: { // New field
+    jenis_pengajuan_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
@@ -16,6 +16,7 @@ const Pengajuan = sequelize.define(
         key: 'id',
       },
     },
+    status: { type: DataTypes.ENUM('pending', 'approved', 'rejected'), defaultValue: 'pending' }, // New field
   },
   { timestamps: true, tableName: 'pengajuan' }
 );
@@ -23,7 +24,6 @@ const Pengajuan = sequelize.define(
 Pengajuan.belongsTo(User, { foreignKey: "user_id" });
 User.hasMany(Pengajuan, { foreignKey: "user_id" });
 
-// New association
 Pengajuan.belongsTo(JenisPengajuan, { foreignKey: "jenis_pengajuan_id" });
 JenisPengajuan.hasMany(Pengajuan, { foreignKey: "jenis_pengajuan_id" });
 
