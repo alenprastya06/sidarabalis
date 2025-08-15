@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Surat Keterangan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Custom font sizes for precise control */
+      .text-9pt {
+        font-size: 12pt;
+      }
+      .text-10pt {
+        font-size: 13pt;
+      }
+      .text-11pt {
+        font-size: 14pt;
+      }
+      .text-8pt {
+        font-size: 11pt;
+      }
+      .text-7pt {
+        font-size: 10pt;
+      }
+      /* Custom line heights */
+      .leading-tight-custom {
+        line-height: 1.4;
+      }
+      .leading-relaxed-custom {
+        line-height: 1.6;
+      }
+
+      /* Print specific styles */
+      @media print {
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+          width: auto;
+          height: auto;
+        }
+
+        body {
+          margin: 8mm 10mm 5mm 10mm;
+          padding-bottom: 0;
+          display: block;
+          min-height: auto;
+        }
+
+        .container {
+          width: 100%;
+          height: auto;
+          min-height: auto;
+          flex: none;
+        }
+
+        footer {
+          margin-bottom: 0 !important;
+          margin-top: auto;
+          border-top: 1px solid #ccc;
+          padding: 1mm 0;
+          flex-shrink: 0;
+        }
+      }
+
+      @page {
+        size: Legal;
+        margin: 8mm 10mm 5mm 10mm;
+      }
+
+      /* Fix untuk field alignment - menggunakan table layout yang lebih stabil */
+      .field-table {
+        display: table;
+        width: 100%;
+      }
+
+      .field-row {
+        display: table-row;
+      }
+
+      .field-label,
+      .field-colon,
+      .field-value {
+        display: table-cell;
+        vertical-align: top;
+        padding-bottom: 2px; /* Memberi sedikit jarak antar baris */
+      }
+
+      .field-label {
+        width: 200px;
+        white-space: nowrap;
+      }
+
+      .field-colon {
+        width: 8px;
+        padding-right: 4px;
+      }
+
+      .field-value {
+        word-wrap: break-word;
+        word-break: break-word;
+      }
+    </style>
+  </head>
+  <body
+    class="font-serif m-0 p-0 text-9pt leading-tight-custom text-black bg-white relative min-h-screen flex flex-col"
+    style="font-family: 'Times New Roman', Times, serif"
+  >
+    <div class="w-full max-w-none bg-white relative flex-1">
+      <div class="table w-full border-b-2 border-black pb-1 mb-1">
+        <div class="table-row w-full">
+          <div class="table-cell align-top w-20 pr-2">
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Coat_of_arms_of_Jakarta.svg/1200px-Coat_of_arms_of_Jakarta.svg.png"
+              alt="Logo"
+              class="h-16 w-auto block"
+            />
+          </div>
+
+          <div class="table-cell align-top text-center w-auto">
+            <p class="font-bold text-10pt leading-none mb-1">
+              PEMERINTAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA ( Ahli Waris )
+            </p>
+
+            <div class="block text-left text-8pt leading-tight-custom">
+              <div class="block mb-0.5">
+                <span class="inline-block w-32 font-semibold"
+                  >KOTA ADMINISTRASI</span
+                >
+                <span class="inline-block w-2">:</span>
+                <span class="inline-block">JAKARTA PUSAT</span>
+              </div>
+              <div class="block mb-0.5">
+                <span class="inline-block w-32 font-semibold">KECAMATAN</span>
+                <span class="inline-block w-2">:</span>
+                <span class="inline-block">TANAH ABANG</span>
+              </div>
+              <div class="block mb-0.5">
+                <span class="inline-block w-32 font-semibold">KELURAHAN</span>
+                <span class="inline-block w-2">:</span>
+                <span class="inline-block">KAMPUNG BALI</span>
+              </div>
+              <div class="block mb-0.5">
+                <span class="inline-block w-32 font-semibold">ALAMAT</span>
+                <span class="inline-block w-2">:</span>
+                <span class="inline-block"
+                  >Jl. Kampung Bali V No. 8 RT.005/08 021 3927391</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center font-bold text-11pt underline mt-3 mb-1.5">
+        <p>SURAT KETERANGAN</p>
+      </div>
+      <div class="text-center mb-3 text-9pt">
+        <p>NOMOR: {{letter_number}}</p>
+      </div>
+
+      <div class="mb-1.5 text-justify text-9pt leading-tight-custom">
+        <p>
+          Yang bertanda tangan di bawah ini lurah Kelurahan Kampung Bali
+          Menerangkan bahwa :
+        </p>
+      </div>
+
+      <div class="ml-6 mb-2 text-[12pt] leading-tight">
+        <div class="grid grid-cols-[150px_10px_1fr] gap-x-2">
+          <span class="font-medium">Nama Lengkap</span>
+          <span>:</span>
+          <span>{{recipient_nama_lengkap}}</span>
+
+          <span class="font-medium">Tempat/Tanggal Lahir</span>
+          <span>:</span>
+          <span>{{recipient_tempat_lahir}} {{recipient_tanggal_lahir}}</span>
+
+          <span class="font-medium">Jenis Kelamin</span>
+          <span>:</span>
+          <span>{{recipient_jenis_kelamin}}</span>
+
+          <span class="font-medium">Agama</span>
+          <span>:</span>
+          <span>{{recipient_agama}}</span>
+
+          <span class="font-medium">Kewarganegaraan</span>
+          <span>:</span>
+          <span>{{recipient_kewarganegaraan}}</span>
+
+          <span class="font-medium">No. KTP/SKTLD</span>
+          <span>:</span>
+          <span>{{recipient_no_ktp_sktld}}</span>
+
+          <span class="font-medium">Alamat</span>
+          <span>:</span>
+          <span>{{recipient_alamat_lengkap}}</span>
+
+          <span class="font-medium">Pekerjaan</span>
+          <span>:</span>
+          <span>{{recipient_pekerjaan}}</span>
+        </div>
+      </div>
+
+      <div
+        class="text-justify mt-2 mb-3 text-9pt leading-relaxed-custom"
+        style="text-indent: 6mm"
+      >
+        <p>
+          Berdasarkan surat pengantar RT {{kelengkapan_rt}} RW
+          {{kelengkapan_rw}} No.{{kelengkapan_no_surat_pengantar}} Tanggal
+          {{kelengkapan_tanggal_surat_pengantar}}, Menerangkan Bahwa benar nama
+          tersebut diatas adalah warga kami yang ingin mengajukan PM1.,
+          berdasarkan surat pernyataan tanggal
+          {{kelengkapan_tanggal_surat_pengantar}}, benar yang bersangkutan
+          diatas akan mengurus peningkatan Sertifikat Hak Guna Bangunan menjadi
+          Sertifikat Hak Milik dengan data Sertifikat Hak Guna Bangunan No. 1310
+          an. {{recipient_nama_lengkap}} dengan luas {{kelengkapan_luas_lahan}}
+          M2 yang terletak di {{kelengkapan_alamat_lahan}}. DKI Jakarta dan
+          objek tanah nya berdiri bangunan rumah tinggal. Surat keterangan ini
+          diperlukan untuk kepengurursan Administrasi Ke BPN. Yang dipergunakan
+          Sebagai : Apabila di kemudian hari keterangan/pengakuan yang
+          bersangkutan tidak benar/melanggar aturan yang berlaku/membuat
+          pengakuan/keterangan/keresahan/keberatan dari pihak yang berwenata
+          sebagai pemilik yang memilafatkan surat keterangan ini, maka
+          sepenuhnya menjadi tanggung jawab yang bersangkutan tanpa melibatkan
+          aparat/pejabat yang menandatanganinya dan Surat Keterangan ini
+          dinyatakan tidak berlaku/dibatalkan kecuali ada penyelesaian sesuai
+          peraturan yang berlaku. Demikian Surat Keterangan ini dibuat untuk
+          dapat dipergunakan sebagaimana mestinya dan bukan merupakan
+          rekomendasi dan berlaku selama 3 (tiga) bulan setelah tanggal
+          diterbitkan
+        </p>
+      </div>
+
+      <div class="flex justify-end items-start gap-4 mt-16 mb-8">
+        <div>
+          <img
+            src="https://www.avasam.com/wp-content/uploads/2019/10/qr-sample.png"
+            alt="QR Code"
+            class="w-16 h-16 border border-gray-800 p-1 mt-10"
+          />
+        </div>
+
+        <div class="text-center text-9pt leading-tight-custom">
+          <p class="mb-1">Jakarta, 07 Agustus 2025</p>
+          <p class="mb-12">LURAH KAMPUNG BALI</p>
+          <p class="font-bold underline">{{approver_name}}</p>
+          <p>NIP. 199608292004122001</p>
+        </div>
+      </div>
+    </div>
+
+    <footer
+      class="w-full text-7pt border-t border-gray-400 pt-2 leading-tight text-justify bg-white mt-auto mb-0"
+      style="font-family: 'Times New Roman', Times, serif"
+    >
+      <p class="mb-1">
+        Dokumen ini ditandatangani secara elektronik menggunakan sertifikat
+        elektronik dari BSrE BSSN.
+      </p>
+      <p class="mb-1">
+        Scan QR code yang ada pada izin ini untuk memeriksa keaslian data.
+      </p>
+      <p class="mb-0">Lindungi aku dan kamu dengan menjadi mandiri</p>
+    </footer>
+  </body>
+</html>
