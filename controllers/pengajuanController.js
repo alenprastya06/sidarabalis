@@ -2,7 +2,8 @@ import Pengajuan from "../models/Pengajuan.js";
 import Owner from "../models/Owner.js";
 import Lahan from "../models/Lahan.js";
 import Document from "../models/Document.js";
-import JenisPengajuan from "../models/JenisPengajuan.js"; // Import the new model
+import JenisPengajuan from "../models/JenisPengajuan.js";
+import Persyaratan from "../models/Persyaratan.js"; // Import Persyaratan model
 
 // @desc    Get all pengajuan for a user
 // @route   GET /api/pengajuan/user
@@ -50,8 +51,39 @@ export const getPengajuanById = async (req, res) => {
 // @route   POST /api/pengajuan
 // @access  Private
 export const createPengajuan = async (req, res) => {
-  const { jenis_pengajuan_id, owner, lahan, documents } = req.body; // Removed kode_pengajuan from req.body
+  const { jenis_pengajuan_id, owner, lahan, documents } = req.body;
   try {
+    // 1. Validate documents against persyaratan
+    const requiredPersyaratan = await Persyaratan.findAll({
+      where: { jenis_pengajuan_id },
+      attributes: ['nama_dokument'],
+    });
+
+    const requiredDocumentNames = requiredPersyaratan.map(p => p.nama_dokument);
+    const submittedDocumentTypes = documents ? documents.map(d => d.document_type) : [];
+
+    // Check for missing required documents
+    const missingDocuments = requiredDocumentNames.filter(
+      docName => !submittedDocumentTypes.includes(docName)
+    );
+    if (missingDocuments.length > 0) {
+      return res.status(400).json({
+        message: "Missing required documents",
+        missing: missingDocuments,
+      });
+    }
+
+    // Check for unexpected documents (optional, but good practice)
+    const unexpectedDocuments = submittedDocumentTypes.filter(
+      docType => !requiredDocumentNames.includes(docType)
+    );
+    if (unexpectedDocuments.length > 0) {
+      return res.status(400).json({
+        message: "Unexpected documents submitted",
+        unexpected: unexpectedDocuments,
+      });
+    }
+
     // Generate kode_pengajuan on server side
     const now = new Date();
     const year = now.getFullYear();
@@ -63,7 +95,7 @@ export const createPengajuan = async (req, res) => {
     const kode_pengajuan = `PJN-${year}${month}${day}-${hours}${minutes}${seconds}`;
 
     const pengajuan = await Pengajuan.create({
-      kode_pengajuan, // Use generated kode_pengajuan
+      kode_pengajuan,
       jenis_pengajuan_id,
       user_id: req.user.id,
     });
