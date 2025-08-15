@@ -6,14 +6,12 @@ const Document = sequelize.define(
   "Document",
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    document_type: { type: DataTypes.STRING },
-    file_url: { type: DataTypes.TEXT },
-    original_name: { type: DataTypes.STRING },
-    mime_type: { type: DataTypes.STRING },
-    file_size: { type: DataTypes.INTEGER },
-    user_note: { type: DataTypes.TEXT },
+    document_type: { type: DataTypes.STRING, allowNull: false }, // Required
+    file_url: { type: DataTypes.TEXT, allowNull: false }, // Required
+    original_name: { type: DataTypes.STRING, allowNull: false }, // Required
+    user_note: { type: DataTypes.TEXT, allowNull: true }, // Optional
   },
-  { timestamps: false, tableName: 'documents' }
+  { timestamps: false }
 );
 
 Document.belongsTo(Pengajuan, { foreignKey: "pengajuan_id" });

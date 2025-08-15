@@ -5,22 +5,42 @@ import Document from "../models/Document.js";
 import JenisPengajuan from "../models/JenisPengajuan.js";
 import Persyaratan from "../models/Persyaratan.js"; // Import Persyaratan model
 
+// @desc    Get all pengajuan for a user or all for admin, grouped by user_id
+// @route   GET /api/pengajuan
+// @access  Private
+export const getAllPengajuan = async (req, res) => {
+  let whereClause = {};
+  if (req.user.role !== 'admin') {
+    whereClause = { user_id: req.user.id };
+  }
+  try {
+    const pengajuan = await Pengajuan.findAll({
+      where: whereClause,
+      include: [Owner, Lahan, Document, JenisPengajuan],
+    });
+
+    // Group pengajuan by user_id
+    const groupedPengajuan = pengajuan.reduce((acc, currentPengajuan) => {
+      const userId = currentPengajuan.user_id;
+      if (!acc[userId]) {
+        acc[userId] = [];
+      }
+      acc[userId].push(currentPengajuan);
+      return acc;
+    }, {});
+
+    res.json(groupedPengajuan);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching pengajuan", error: error.message });
+  }
+};
+
 // @desc    Get all pengajuan for a user
 // @route   GET /api/pengajuan/user
 // @access  Private
 export const getPengajuanUser = async (req, res) => {
   const pengajuan = await Pengajuan.findAll({
     where: { user_id: req.user.id },
-    include: [Owner, Lahan, Document, JenisPengajuan], // Include JenisPengajuan
-  });
-  res.json(pengajuan);
-};
-
-// @desc    Get all pengajuan (admin only)
-// @route   GET /api/pengajuan
-// @access  Private, Admin
-export const getAllPengajuan = async (req, res) => {
-  const pengajuan = await Pengajuan.findAll({
     include: [Owner, Lahan, Document, JenisPengajuan], // Include JenisPengajuan
   });
   res.json(pengajuan);
