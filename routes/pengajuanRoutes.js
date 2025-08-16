@@ -7,6 +7,7 @@ import {
   deletePengajuan,
   updateDocumentStatus,
   rejectPengajuan,
+  getGeneratedDrafts, // new
   prepareDocumentForEditing,
   generateEditedDocument,
   sendDocumentToUser,
@@ -14,6 +15,17 @@ import {
 import { protect, adminOnly, validateSession } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// @route   GET /api/pengajuan/generated-drafts
+// @desc    Get all pengajuan with generated drafts (admin only)
+// @access  Private, Admin
+router.get(
+  "/generated-drafts",
+  protect,
+  adminOnly,
+  validateSession,
+  getGeneratedDrafts
+);
 
 // @route   GET /api/pengajuan
 // @desc    Get all pengajuan (for user or admin)

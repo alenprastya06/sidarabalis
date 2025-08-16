@@ -310,6 +310,27 @@ export const rejectPengajuan = async (req, res) => {
   }
 };
 
+export const getGeneratedDrafts = async (req, res) => {
+  try {
+    const drafts = await Pengajuan.findAll({
+      where: {
+        draft_document_url: { [Op.ne]: null },
+        final_document_url: { [Op.is]: null },
+        status: 'approved',
+      },
+      include: [User, Owner, Lahan, JenisPengajuan],
+    });
+    res.json(drafts);
+  } catch (error) {
+     res.status(500).json({
+      message: "Error fetching generated drafts",
+      error: error.message,
+    });
+  }
+}
+
+// --- Document Generation Workflow ---
+
 // Helper function to get and populate template
 const getPopulatedHtml = async (pengajuanId, userId, userRole) => {
   const pengajuan = await Pengajuan.findOne({
