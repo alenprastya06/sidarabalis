@@ -301,7 +301,7 @@ export const rejectPengajuan = async (req, res) => {
       admin_note: admin_note || "Pengajuan ditolak oleh admin.",
     });
 
-    res.json({ message: "Pengajuan has been rejected", pengajuan });
+    res.json({ message: "Pengajuan telah ditolak", pengajuan });
   } catch (error) {
     res.status(400).json({
       message: "Error rejecting pengajuan",
