@@ -1,5 +1,6 @@
 import JenisPengajuan from "../models/JenisPengajuan.js";
 import Persyaratan from "../models/Persyaratan.js";
+import Pengajuan from "../models/Pengajuan.js"; // Import Pengajuan model
 
 export const createJenisPengajuan = async (req, res) => {
   const { name } = req.body;
@@ -13,21 +14,47 @@ export const createJenisPengajuan = async (req, res) => {
 
 export const getJenisPengajuan = async (req, res) => {
   try {
-    const jenisPengajuan = await JenisPengajuan.findAll({
-      include: [
-        {
-          model: Persyaratan,
-          attributes: ['nama_dokument'], // Only fetch nama_dokument
-        },
-      ],
-    });
+    // 1. Get all Jenis Pengajuan and user's active pengajuan in parallel
+    const [allJenisPengajuan, userPengajuan] = await Promise.all([
+      JenisPengajuan.findAll({
+        include: [
+          {
+            model: Persyaratan,
+            attributes: ['nama_dokument'],
+          },
+        ],
+      }),
+      Pengajuan.findAll({
+        where: { user_id: req.user.id },
+        attributes: ['id', 'status', 'jenis_pengajuan_id'],
+      })
+    ]);
 
-    // Transform the response to get an array of strings for Persyaratans
-    const transformedJenisPengajuan = jenisPengajuan.map(jp => {
-      const plainJp = jp.get({ plain: true }); // Get plain data
+    // 2. Create a map of user's pengajuan for quick lookup
+    const userPengajuanMap = new Map();
+    for (const p of userPengajuan) {
+      userPengajuanMap.set(p.jenis_pengajuan_id, p);
+    }
+
+    // 3. Transform the response
+    const transformedJenisPengajuan = allJenisPengajuan.map(jp => {
+      const plainJp = jp.get({ plain: true });
+      
+      // Attach active pengajuan info if it exists
+      if (userPengajuanMap.has(plainJp.id)) {
+        const activePengajuan = userPengajuanMap.get(plainJp.id);
+        plainJp.pengajuan_aktif = {
+          id_pengajuan: activePengajuan.id,
+          nama_pengajuan: plainJp.name, // The name of the submission type
+          status: activePengajuan.status,
+        };
+      }
+
+      // Simplify persyaratan to an array of strings
       if (plainJp.Persyaratans && Array.isArray(plainJp.Persyaratans)) {
         plainJp.Persyaratans = plainJp.Persyaratans.map(p => p.nama_dokument);
       }
+      
       return plainJp;
     });
 
