@@ -16,7 +16,9 @@ const Pengajuan = sequelize.define(
         key: 'id',
       },
     },
-    status: { type: DataTypes.ENUM('pending', 'approved', 'rejected', 'menunggu_perbaikan'), defaultValue: 'pending' }, // New field
+    status: { type: DataTypes.ENUM('pending', 'approved', 'rejected', 'menunggu_perbaikan', 'completed'), defaultValue: 'pending' }, // New field
+    draft_document_url: { type: DataTypes.STRING, allowNull: true },
+    final_document_url: { type: DataTypes.STRING, allowNull: true },
   },
   { timestamps: true, tableName: 'pengajuan' }
 );

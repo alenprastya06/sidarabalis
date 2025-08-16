@@ -11,6 +11,7 @@ import FormData from "form-data";
 import fs from "fs";
 import path from "path";
 import { Op } from "sequelize";
+import { Readable } from "stream";
 
 const updatePengajuanStatus = async (pengajuanId) => {
   const documents = await Document.findAll({
@@ -30,6 +31,9 @@ const updatePengajuanStatus = async (pengajuanId) => {
     }
   }
 
+  const pengajuan = await Pengajuan.findByPk(pengajuanId);
+  if (!pengajuan || pengajuan.status === 'completed') return; // Do not change status if completed
+
   let newPengajuanStatus = "pending";
   if (anyRejected) {
     newPengajuanStatus = "menunggu_perbaikan";
@@ -37,8 +41,7 @@ const updatePengajuanStatus = async (pengajuanId) => {
     newPengajuanStatus = "approved";
   }
 
-  const pengajuan = await Pengajuan.findByPk(pengajuanId);
-  if (pengajuan && pengajuan.status !== newPengajuanStatus) {
+  if (pengajuan.status !== newPengajuanStatus) {
     await pengajuan.update({ status: newPengajuanStatus });
   }
 };
@@ -55,10 +58,9 @@ export const getAllPengajuan = async (req, res) => {
       include: [User, Owner, Lahan, Document, JenisPengajuan],
     });
 
-    // Group by user, tapi sertakan data user
     const groupedByUser = pengajuanList.reduce((acc, pengajuan) => {
       const user = pengajuan.User?.get({ plain: true });
-      if (!user) return acc; // skip jika tidak ada user
+      if (!user) return acc;
 
       let existingUser = acc.find((u) => u.id === user.id);
       if (!existingUser) {
@@ -69,7 +71,7 @@ export const getAllPengajuan = async (req, res) => {
       const plainPengajuan = pengajuan.get({ plain: true });
       plainPengajuan.id_pengajuan = plainPengajuan.id;
       delete plainPengajuan.id;
-      delete plainPengajuan.User; // hapus duplikasi user di dalam pengajuan
+      delete plainPengajuan.User;
 
       existingUser.pengajuan.push(plainPengajuan);
       return acc;
@@ -308,136 +310,142 @@ export const rejectPengajuan = async (req, res) => {
   }
 };
 
-import { Readable } from "stream";
+// Helper function to get and populate template
+const getPopulatedHtml = async (pengajuanId, userId, userRole) => {
+  const pengajuan = await Pengajuan.findOne({
+    where: { id: pengajuanId },
+    include: [Owner, Lahan, JenisPengajuan],
+  });
 
-// Bagian yang diperbaiki dari fungsi generatePdfDocument
-export const generatePdfDocument = async (req, res) => {
+  if (!pengajuan) {
+    throw { status: 404, message: "Pengajuan not found" };
+  }
+
+  if (userRole !== "admin") {
+    throw { status: 403, message: "Forbidden" };
+  }
+
+  if (pengajuan.status !== "approved") {
+    throw {
+      status: 400,
+      message: "Pengajuan status must be 'approved' to prepare a document.",
+    };
+  }
+
+  const templateName = pengajuan.JenisPengajuan.name;
+  const templateFilePath = path.join(
+    process.cwd(),
+    "templates",
+    `${templateName}.html`
+  );
+
+  if (!fs.existsSync(templateFilePath)) {
+    throw {
+      status: 404,
+      message: `Template file not found: ${templateName}.html`,
+    };
+  }
+
+  let htmlContent = fs.readFileSync(templateFilePath, "utf8");
+
+  const formatTanggalLahir = (tanggal) => {
+    if (!tanggal) return "";
+    const date = new Date(tanggal);
+    return date.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const formatTanggalSekarang = () => {
+    return new Date().toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const data = {
+    letter_number: pengajuan.kode_pengajuan || "",
+    recipient_nama_lengkap: pengajuan.Owner?.nama || "",
+    recipient_tempat_lahir: pengajuan.Owner?.tempat_lahir || "",
+    recipient_tanggal_lahir: formatTanggalLahir(pengajuan.Owner?.tanggal_lahir),
+    recipient_jenis_kelamin:
+      pengajuan.Owner?.jenis_kelamin === "L"
+        ? "Laki-laki"
+        : pengajuan.Owner?.jenis_kelamin === "P"
+        ? "Perempuan"
+        : "",
+    recipient_agama: pengajuan.Owner?.agama || "",
+    recipient_kewarganegaraan: pengajuan.Owner?.kewarganegaraan || "",
+    recipient_no_ktp_sktld: pengajuan.Owner?.nik || "",
+    recipient_alamat_lengkap: pengajuan.Owner?.alamat || "",
+    recipient_pekerjaan: pengajuan.Owner?.pekerjaan || "",
+    kelengkapan_rt: pengajuan.Lahan?.alamat_rt || "",
+    kelengkapan_rw: pengajuan.Lahan?.alamat_rw || "",
+    kelengkapan_no_surat_pengantar: pengajuan.Lahan?.no_surat_rt || "",
+    kelengkapan_tanggal_surat_pengantar: formatTanggalSekarang(),
+    kelengkapan_luas_lahan: pengajuan.Lahan?.luas_lahan || "",
+    kelengkapan_alamat_lahan: [
+      pengajuan.Lahan?.alamat_rt ? `RT ${pengajuan.Lahan.alamat_rt}` : "",
+      pengajuan.Lahan?.alamat_rw ? `RW ${pengajuan.Lahan.alamat_rw}` : "",
+      pengajuan.Lahan?.wilayah_kelurahan
+        ? `Kel. ${pengajuan.Lahan.wilayah_kelurahan}`
+        : "",
+      pengajuan.Lahan?.wilayah_kecamatan
+        ? `Kec. ${pengajuan.Lahan.wilayah_kecamatan}`
+        : "",
+      pengajuan.Lahan?.wilayah_kota
+        ? `Kota ${pengajuan.Lahan.wilayah_kota}`
+        : "",
+    ]
+      .filter((item) => item !== "")
+      .join(", "),
+    issue_date: formatTanggalSekarang(),
+    approver_name: "NAMA LURAH",
+  };
+
+  for (const [key, value] of Object.entries(data)) {
+    const regex = new RegExp(`\\{\\{${key}\\\}\}`,"g");
+    htmlContent = htmlContent.replace(regex, value || "");
+  }
+
+  return { htmlContent, pengajuan };
+};
+
+export const prepareDocumentForEditing = async (req, res) => {
+  try {
+    const { htmlContent } = await getPopulatedHtml(
+      req.params.id,
+      req.user.id,
+      req.user.role
+    );
+    res.json({ htmlContent });
+  } catch (error) {
+    res
+      .status(error.status || 500)
+      .json({ message: error.message || "An internal error occurred." });
+  }
+};
+
+export const generateEditedDocument = async (req, res) => {
   const { id } = req.params;
+  const { editedHtml } = req.body;
+
+  if (!editedHtml) {
+    return res.status(400).json({ message: "editedHtml content is required." });
+  }
 
   try {
-    const pengajuan = await Pengajuan.findOne({
-      where: { id },
-      include: [Owner, Lahan, JenisPengajuan],
-    });
-
+    const pengajuan = await Pengajuan.findByPk(id);
     if (!pengajuan) {
       return res.status(404).json({ message: "Pengajuan not found" });
     }
-
-    if (req.user.role !== "admin" && pengajuan.user_id !== req.user.id) {
+    if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    if (pengajuan.status !== "approved") {
-      return res.status(400).json({
-        message: "Pengajuan status must be 'approved' to generate PDF.",
-      });
-    }
-
-    const templateName = pengajuan.JenisPengajuan.name;
-    const templateFilePath = path.join(
-      process.cwd(),
-      "templates",
-      `${templateName}.html`
-    );
-
-    if (!fs.existsSync(templateFilePath)) {
-      return res.status(404).json({
-        message: `Template file not found: ${templateName}.html`,
-      });
-    }
-
-    let htmlContent;
-    try {
-      htmlContent = fs.readFileSync(templateFilePath, "utf8");
-
-      // Format tanggal lahir dengan benar
-      const formatTanggalLahir = (tanggal) => {
-        if (!tanggal) return "";
-        const date = new Date(tanggal);
-        return date.toLocaleDateString("id-ID", {
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        });
-      };
-
-      // Format tanggal hari ini
-      const formatTanggalSekarang = () => {
-        return new Date().toLocaleDateString("id-ID", {
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        });
-      };
-
-      const data = {
-        letter_number: pengajuan.kode_pengajuan || "",
-        recipient_nama_lengkap: pengajuan.Owner?.nama || "",
-        recipient_tempat_lahir: pengajuan.Owner?.tempat_lahir || "", // Pastikan field ini ada di model Owner
-        recipient_tanggal_lahir: formatTanggalLahir(
-          pengajuan.Owner?.tanggal_lahir
-        ),
-        recipient_jenis_kelamin:
-          pengajuan.Owner?.jenis_kelamin === "L"
-            ? "Laki-laki"
-            : pengajuan.Owner?.jenis_kelamin === "P"
-            ? "Perempuan"
-            : "",
-        recipient_agama: pengajuan.Owner?.agama || "",
-        recipient_kewarganegaraan: pengajuan.Owner?.kewarganegaraan || "",
-        recipient_no_ktp_sktld: pengajuan.Owner?.nik || "",
-        recipient_alamat_lengkap: pengajuan.Owner?.alamat || "",
-        recipient_pekerjaan: pengajuan.Owner?.pekerjaan || "",
-
-        kelengkapan_rt: pengajuan.Lahan?.alamat_rt || "",
-        kelengkapan_rw: pengajuan.Lahan?.alamat_rw || "",
-        kelengkapan_no_surat_pengantar: pengajuan.Lahan?.no_surat_rt || "",
-        kelengkapan_tanggal_surat_pengantar: formatTanggalSekarang(),
-        kelengkapan_luas_lahan: pengajuan.Lahan?.luas_lahan || "",
-        kelengkapan_alamat_lahan: [
-          pengajuan.Lahan?.alamat_rt ? `RT ${pengajuan.Lahan.alamat_rt}` : "",
-          pengajuan.Lahan?.alamat_rw ? `RW ${pengajuan.Lahan.alamat_rw}` : "",
-          pengajuan.Lahan?.wilayah_kelurahan
-            ? `Kel. ${pengajuan.Lahan.wilayah_kelurahan}`
-            : "",
-          pengajuan.Lahan?.wilayah_kecamatan
-            ? `Kec. ${pengajuan.Lahan.wilayah_kecamatan}`
-            : "",
-          pengajuan.Lahan?.wilayah_kota
-            ? `Kota ${pengajuan.Lahan.wilayah_kota}`
-            : "",
-        ]
-          .filter((item) => item !== "")
-          .join(", "),
-
-        issue_date: formatTanggalSekarang(),
-        approver_name: "NAMA LURAH", // Ganti dengan data dinamis jika ada
-      };
-
-      // PERBAIKAN UTAMA: Regex pattern yang benar untuk mengganti placeholder
-      for (const [key, value] of Object.entries(data)) {
-        // Pattern lama yang salah: \{\{${key}\\}\
-        // Pattern baru yang benar: \{\{${key}\}\} 
-        const regex = new RegExp(`\{\{${key}\}\}`, "g");
-        htmlContent = htmlContent.replace(regex, value || "");
-      }
-
-      // Debug: Log untuk melihat apakah replacement berhasil
-      console.log("Data yang akan di-replace:", data);
-      console.log(
-        "Apakah masih ada placeholder yang tersisa?",
-        htmlContent.includes("{{") ? "YA" : "TIDAK"
-      );
-    } catch (readError) {
-      console.error("Error reading template file:", readError);
-      return res.status(500).json({
-        message: "Error reading or processing template file",
-        error: readError.message,
-      });
-    }
-
-    // Generate PDF using Puppeteer
     let browser;
     let pdfBuffer;
     try {
@@ -446,38 +454,23 @@ export const generatePdfDocument = async (req, res) => {
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });
       const page = await browser.newPage();
-      await page.setContent(htmlContent, { waitUntil: "networkidle0" });
-      pdfBuffer = await page.pdf({
-        format: "A4",
-        printBackground: true,
-        margin: {
-          top: "20mm",
-          right: "15mm",
-          bottom: "20mm",
-          left: "15mm",
-        },
-      });
+      await page.setContent(editedHtml, { waitUntil: "networkidle0" });
+      pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
     } catch (puppeteerError) {
       console.error("Error generating PDF with Puppeteer:", puppeteerError);
-      return res.status(500).json({
-        message: "Error generating PDF",
-        error: puppeteerError.message,
-      });
+      return res.status(500).json({ message: "Error generating PDF" });
     } finally {
       if (browser) {
         await browser.close();
       }
     }
 
-    // Upload PDF to external service
     try {
       const formData = new FormData();
-      const filename = `${pengajuan.kode_pengajuan}.pdf`;
-
-      // Convert Buffer to Stream to fix "source.on is not a function" error
+      const filename = `${pengajuan.kode_pengajuan}_draft.pdf`;
       const bufferStream = new Readable();
       bufferStream.push(pdfBuffer);
-      bufferStream.push(null); // End the stream
+      bufferStream.push(null);
 
       formData.append("file", bufferStream, {
         filename: filename,
@@ -485,73 +478,63 @@ export const generatePdfDocument = async (req, res) => {
         knownLength: pdfBuffer.length,
       });
 
-      console.log(`Uploading PDF: ${filename}`);
-
       const uploadResponse = await axios.post(
         "https://invitations.my.id/api/upload-file",
         formData,
-        {
-          headers: {
-            ...formData.getHeaders(),
-          },
-          timeout: 30000,
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity,
-        }
+        { headers: { ...formData.getHeaders() } }
       );
-
-      console.log("Upload response:", uploadResponse.data);
 
       if (uploadResponse.data && uploadResponse.data.status === 200) {
         const pdfUrl = uploadResponse.data.data?.path;
-
         if (pdfUrl) {
-          return res.status(200).json({
-            message: "PDF generated and uploaded successfully",
-            pdf_url: pdfUrl,
-            kode_pengajuan: pengajuan.kode_pengajuan,
-            filename: filename,
-          });
-        } else {
-          console.error("PDF URL not found in response:", uploadResponse.data);
-          return res.status(500).json({
-            message: "PDF uploaded but URL not found in response",
-            upload_response: uploadResponse.data,
+          await pengajuan.update({ draft_document_url: pdfUrl });
+          return res.json({
+            message: "Draft document generated successfully. Please review.",
+            draft_document_url: pdfUrl,
           });
         }
-      } else {
-        console.error("Upload failed with response:", uploadResponse.data);
-        return res.status(500).json({
-          message: "Failed to upload PDF",
-          upload_response: uploadResponse.data,
-        });
       }
+      throw new Error("Failed to upload PDF or get URL.");
     } catch (uploadError) {
       console.error("Error uploading PDF:", uploadError);
-
-      if (uploadError.response) {
-        return res.status(500).json({
-          message: "Error uploading PDF to external service",
-          error: uploadError.response.data || uploadError.message,
-          status: uploadError.response.status,
-        });
-      } else if (uploadError.request) {
-        return res.status(500).json({
-          message: "Network error when uploading PDF",
-          error: "No response received from upload service",
-        });
-      } else {
-        return res.status(500).json({
-          message: "Error preparing PDF upload",
-          error: uploadError.message,
-        });
-      }
+      return res.status(500).json({ message: "Error uploading draft PDF." });
     }
   } catch (error) {
-    console.error("Error in generatePdfDocument:", error);
-    return res.status(500).json({
-      message: "Internal server error while generating PDF",
-      error: error.message,
+    res
+      .status(error.status || 500)
+      .json({ message: error.message || "An internal error occurred." });
+  }
+};
+
+export const sendDocumentToUser = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const pengajuan = await Pengajuan.findByPk(id);
+    if (!pengajuan) {
+      return res.status(404).json({ message: "Pengajuan not found" });
+    }
+
+    if (!pengajuan.draft_document_url) {
+      return res
+        .status(400)
+        .json({ message: "No draft document found to send." });
+    }
+
+    await pengajuan.update({
+      final_document_url: pengajuan.draft_document_url,
+      draft_document_url: null,
+      status: "completed",
     });
+
+    res.json({
+      message: "Document has been sent to the user.",
+      final_document_url: pengajuan.final_document_url,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "An internal error occurred." });
   }
 };

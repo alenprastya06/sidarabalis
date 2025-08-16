@@ -6,10 +6,13 @@ import {
   updatePengajuan,
   deletePengajuan,
   updateDocumentStatus,
-  generatePdfDocument,
-  rejectPengajuan, 
+  rejectPengajuan,
+  prepareDocumentForEditing,
+  generateEditedDocument,
+  sendDocumentToUser,
 } from "../controllers/pengajuanController.js";
 import { protect, adminOnly, validateSession } from "../middleware/authMiddleware.js";
+
 const router = express.Router();
 
 // @route   GET /api/pengajuan
@@ -40,16 +43,52 @@ router.delete("/:id", protect, validateSession, deletePengajuan);
 // @route   PUT /api/pengajuan/documents/:id/status
 // @desc    Update document status (admin only)
 // @access  Private, Admin
-router.put("/documents/:id/status", protect, adminOnly, validateSession, updateDocumentStatus);
+router.put(
+  "/documents/:id/status",
+  protect,
+  adminOnly,
+  validateSession,
+  updateDocumentStatus
+);
 
 // @route   PUT /api/pengajuan/:id/reject
 // @desc    Reject a pengajuan (admin only)
 // @access  Private, Admin
 router.put("/:id/reject", protect, adminOnly, validateSession, rejectPengajuan);
 
-// @route   GET /api/pengajuan/:id/generate-pdf
-// @desc    Generate PDF document from template and upload
-// @access  Private (Admin or Pengajuan Owner)
-router.get("/:id/generate-pdf", protect, validateSession, generatePdfDocument);
+// --- NEW DOCUMENT WORKFLOW ---
+
+// @route   GET /api/pengajuan/:id/prepare-document
+// @desc    Get pre-filled HTML for editing (admin only)
+// @access  Private, Admin
+router.get(
+  "/:id/prepare-document",
+  protect,
+  adminOnly,
+  validateSession,
+  prepareDocumentForEditing
+);
+
+// @route   POST /api/pengajuan/:id/generate-edited-document
+// @desc    Generate PDF from edited HTML (admin only)
+// @access  Private, Admin
+router.post(
+  "/:id/generate-edited-document",
+  protect,
+  adminOnly,
+  validateSession,
+  generateEditedDocument
+);
+
+// @route   POST /api/pengajuan/:id/send-document
+// @desc    Send final document to user (admin only)
+// @access  Private, Admin
+router.post(
+  "/:id/send-document",
+  protect,
+  adminOnly,
+  validateSession,
+  sendDocumentToUser
+);
 
 export default router;
