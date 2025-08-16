@@ -329,6 +329,26 @@ export const getGeneratedDrafts = async (req, res) => {
   }
 }
 
+export const getCompletedDocuments = async (req, res) => {
+  try {
+    const completed = await Pengajuan.findAll({
+      where: {
+        user_id: req.user.id,
+        final_document_url: { [Op.ne]: null },
+        status: 'completed',
+      },
+      include: [JenisPengajuan],
+      order: [['updatedAt', 'DESC']],
+    });
+    res.json(completed);
+  } catch (error) {
+     res.status(500).json({
+      message: "Error fetching completed documents",
+      error: error.message,
+    });
+  }
+};
+
 // --- Document Generation Workflow ---
 
 // Helper function to get and populate template
@@ -467,6 +487,10 @@ export const generateEditedDocument = async (req, res) => {
       return res.status(403).json({ message: "Forbidden" });
     }
 
+    if (pengajuan.final_document_url) {
+      return res.status(400).json({ message: "Dokumen final sudah pernah dikirim. Tidak dapat membuat draf baru." });
+    }
+
     let browser;
     let pdfBuffer;
     try {
@@ -539,6 +563,10 @@ export const sendDocumentToUser = async (req, res) => {
       return res.status(404).json({ message: "Pengajuan not found" });
     }
 
+    if (pengajuan.final_document_url) {
+      return res.status(400).json({ message: "Dokumen final untuk pengajuan ini sudah pernah dikirim." });
+    }
+
     if (!pengajuan.draft_document_url) {
       return res
         .status(400)
@@ -552,7 +580,7 @@ export const sendDocumentToUser = async (req, res) => {
     });
 
     res.json({
-      message: "Document has been sent to the user.",
+      message: "Dokumen telah berhasil dikirim ke pengguna.",
       final_document_url: pengajuan.final_document_url,
     });
   } catch (error) {

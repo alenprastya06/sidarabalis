@@ -7,7 +7,8 @@ import {
   deletePengajuan,
   updateDocumentStatus,
   rejectPengajuan,
-  getGeneratedDrafts, // new
+  getGeneratedDrafts,
+  getCompletedDocuments, // new
   prepareDocumentForEditing,
   generateEditedDocument,
   sendDocumentToUser,
@@ -15,6 +16,8 @@ import {
 import { protect, adminOnly, validateSession } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// --- LIST ROUTES ---
 
 // @route   GET /api/pengajuan/generated-drafts
 // @desc    Get all pengajuan with generated drafts (admin only)
@@ -27,10 +30,22 @@ router.get(
   getGeneratedDrafts
 );
 
+// @route   GET /api/pengajuan/completed-documents
+// @desc    Get user's own completed documents with final URL
+// @access  Private
+router.get(
+  "/completed-documents",
+  protect,
+  validateSession,
+  getCompletedDocuments
+);
+
 // @route   GET /api/pengajuan
 // @desc    Get all pengajuan (for user or admin)
 // @access  Private
 router.get("/", protect, validateSession, getAllPengajuan);
+
+// --- CRUD ROUTES ---
 
 // @route   GET /api/pengajuan/:id
 // @desc    Get a pengajuan by ID
@@ -52,6 +67,8 @@ router.put("/:id", protect, validateSession, updatePengajuan);
 // @access  Private
 router.delete("/:id", protect, validateSession, deletePengajuan);
 
+// --- STATUS & WORKFLOW ROUTES ---
+
 // @route   PUT /api/pengajuan/documents/:id/status
 // @desc    Update document status (admin only)
 // @access  Private, Admin
@@ -67,8 +84,6 @@ router.put(
 // @desc    Reject a pengajuan (admin only)
 // @access  Private, Admin
 router.put("/:id/reject", protect, adminOnly, validateSession, rejectPengajuan);
-
-// --- NEW DOCUMENT WORKFLOW ---
 
 // @route   GET /api/pengajuan/:id/prepare-document
 // @desc    Get pre-filled HTML for editing (admin only)

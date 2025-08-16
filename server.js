@@ -6,6 +6,7 @@ import authRoutes from "./routes/authRoutes.js";
 import pengajuanRoutes from "./routes/pengajuanRoutes.js";
 import jenisPengajuanRoutes from "./routes/jenisPengajuanRoutes.js";
 import persyaratanRoutes from "./routes/persyaratanRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/pengajuan", pengajuanRoutes);
 app.use("/api/jenis-pengajuan", jenisPengajuanRoutes);
 app.use("/api/persyaratan", persyaratanRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Gunakan authenticate() instead of sync() untuk production
 const startServer = async () => {
