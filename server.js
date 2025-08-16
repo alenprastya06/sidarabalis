@@ -23,6 +23,7 @@ const startServer = async () => {
   try {
     // Hanya test koneksi database, tidak mengubah schema
     await sequelize.authenticate();
+    // await sequelize.sync({ alter: true });
     console.log("Database connection has been established successfully.");
 
     // Start server

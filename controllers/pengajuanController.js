@@ -10,6 +10,7 @@ import axios from "axios";
 import FormData from "form-data";
 import fs from "fs";
 import path from "path";
+import { Op } from "sequelize";
 
 const updatePengajuanStatus = async (pengajuanId) => {
   const documents = await Document.findAll({
@@ -31,7 +32,7 @@ const updatePengajuanStatus = async (pengajuanId) => {
 
   let newPengajuanStatus = "pending";
   if (anyRejected) {
-    newPengajuanStatus = "rejected";
+    newPengajuanStatus = "menunggu_perbaikan";
   } else if (allApproved) {
     newPengajuanStatus = "approved";
   }
@@ -111,18 +112,18 @@ export const getPengajuanById = async (req, res) => {
 export const createPengajuan = async (req, res) => {
   const { jenis_pengajuan_id, owner, lahan, documents } = req.body;
   try {
-    const existingPendingPengajuan = await Pengajuan.findOne({
+    const existingPengajuan = await Pengajuan.findOne({
       where: {
         user_id: req.user.id,
         jenis_pengajuan_id: jenis_pengajuan_id,
-        status: "pending",
+        status: { [Op.in]: ["pending", "menunggu_perbaikan"] },
       },
     });
 
-    if (existingPendingPengajuan) {
+    if (existingPengajuan) {
       return res.status(400).json({
         message:
-          "Anda sudah memiliki pengajuan dengan jenis yang sama yang masih dalam status pending. Harap selesaikan pengajuan sebelumnya atau tunggu hingga statusnya berubah.",
+          "Anda sudah memiliki pengajuan dengan jenis yang sama yang masih dalam status pending atau menunggu perbaikan. Harap selesaikan pengajuan sebelumnya atau tunggu hingga statusnya berubah.",
       });
     }
 
@@ -283,6 +284,30 @@ export const updateDocumentStatus = async (req, res) => {
   }
 };
 
+export const rejectPengajuan = async (req, res) => {
+  const { id } = req.params;
+  const { admin_note } = req.body;
+
+  try {
+    const pengajuan = await Pengajuan.findByPk(id);
+    if (!pengajuan) {
+      return res.status(404).json({ message: "Pengajuan not found" });
+    }
+
+    await pengajuan.update({
+      status: "rejected",
+      admin_note: admin_note || "Pengajuan ditolak oleh admin.",
+    });
+
+    res.json({ message: "Pengajuan has been rejected", pengajuan });
+  } catch (error) {
+    res.status(400).json({
+      message: "Error rejecting pengajuan",
+      error: error.message,
+    });
+  }
+};
+
 import { Readable } from "stream";
 
 // Bagian yang diperbaiki dari fungsi generatePdfDocument
@@ -392,9 +417,9 @@ export const generatePdfDocument = async (req, res) => {
 
       // PERBAIKAN UTAMA: Regex pattern yang benar untuk mengganti placeholder
       for (const [key, value] of Object.entries(data)) {
-        // Pattern lama yang salah: \\{\\{${key}\\\\}\}
-        // Pattern baru yang benar: \\{\\{${key}\\}\\}
-        const regex = new RegExp(`\\{\\{${key}\\}\\}`, "g");
+        // Pattern lama yang salah: \{\{${key}\\}\
+        // Pattern baru yang benar: \{\{${key}\}\} 
+        const regex = new RegExp(`\{\{${key}\}\}`, "g");
         htmlContent = htmlContent.replace(regex, value || "");
       }
 

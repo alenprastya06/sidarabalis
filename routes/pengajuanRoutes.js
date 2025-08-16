@@ -6,7 +6,8 @@ import {
   updatePengajuan,
   deletePengajuan,
   updateDocumentStatus,
-  generatePdfDocument, // Import the new function
+  generatePdfDocument,
+  rejectPengajuan, 
 } from "../controllers/pengajuanController.js";
 import { protect, adminOnly, validateSession } from "../middleware/authMiddleware.js";
 const router = express.Router();
@@ -40,6 +41,11 @@ router.delete("/:id", protect, validateSession, deletePengajuan);
 // @desc    Update document status (admin only)
 // @access  Private, Admin
 router.put("/documents/:id/status", protect, adminOnly, validateSession, updateDocumentStatus);
+
+// @route   PUT /api/pengajuan/:id/reject
+// @desc    Reject a pengajuan (admin only)
+// @access  Private, Admin
+router.put("/:id/reject", protect, adminOnly, validateSession, rejectPengajuan);
 
 // @route   GET /api/pengajuan/:id/generate-pdf
 // @desc    Generate PDF document from template and upload
