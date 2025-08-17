@@ -15,6 +15,11 @@ const Persyaratan = sequelize.define(
         key: 'id',
       },
     },
+    wajib: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true
+    }
   },
   {
     timestamps: false,

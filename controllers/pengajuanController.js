@@ -129,12 +129,15 @@ export const createPengajuan = async (req, res) => {
       });
     }
 
-    const requiredPersyaratan = await Persyaratan.findAll({
+    const allPersyaratan = await Persyaratan.findAll({
       where: { jenis_pengajuan_id },
-      attributes: ["nama_dokument"],
+      attributes: ["nama_dokument", "wajib"],
     });
 
-    const requiredDocumentNames = requiredPersyaratan.map(
+    // Filter for mandatory documents only
+    const mandatoryPersyaratan = allPersyaratan.filter(p => p.wajib);
+
+    const requiredDocumentNames = mandatoryPersyaratan.map(
       (p) => p.nama_dokument
     );
     const submittedDocumentTypes = documents
@@ -146,13 +149,15 @@ export const createPengajuan = async (req, res) => {
     );
     if (missingDocuments.length > 0) {
       return res.status(400).json({
-        message: "Dokumen yang diperlukan tidak lengkap.",
+        message: "Dokumen wajib tidak lengkap.",
         missing: missingDocuments,
       });
     }
 
+    // Check for unexpected documents against ALL possible persyaratan
+    const allPossibleDocumentNames = allPersyaratan.map(p => p.nama_dokument);
     const unexpectedDocuments = submittedDocumentTypes.filter(
-      (docType) => !requiredDocumentNames.includes(docType)
+      (docType) => !allPossibleDocumentNames.includes(docType)
     );
     if (unexpectedDocuments.length > 0) {
       return res.status(400).json({
@@ -218,10 +223,15 @@ export const updatePengajuan = async (req, res) => {
         const docs = documents.map((d) => ({
           ...d,
           pengajuan_id: pengajuan.id,
+          status: 'pending', // Force status to pending on update
+          admin_note: null, // Clear previous rejection notes
         }));
         await Document.bulkCreate(docs);
       }
     }
+
+    // Set the parent submission status back to pending for re-review
+    await pengajuan.update({ status: 'pending' });
 
     const updatedPengajuan = await Pengajuan.findOne({
       where: { id: req.params.id },
