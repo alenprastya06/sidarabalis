@@ -8,7 +8,8 @@ import {
   updateDocumentStatus,
   rejectPengajuan,
   getGeneratedDrafts,
-  getCompletedDocuments, // new
+  getCompletedDocuments,
+  getNeedsRevision, // new
   prepareDocumentForEditing,
   generateEditedDocument,
   sendDocumentToUser,
@@ -39,6 +40,17 @@ router.get(
   validateSession,
   getCompletedDocuments
 );
+
+// @route   GET /api/pengajuan/needs-revision
+// @desc    Get user's own submissions that need revision
+// @access  Private
+router.get(
+  "/needs-revision",
+  protect,
+  validateSession,
+  getNeedsRevision
+);
+
 
 // @route   GET /api/pengajuan
 // @desc    Get all pengajuan (for user or admin)

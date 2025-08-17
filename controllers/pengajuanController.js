@@ -349,6 +349,26 @@ export const getCompletedDocuments = async (req, res) => {
   }
 };
 
+export const getNeedsRevision = async (req, res) => {
+  try {
+    const needsRevision = await Pengajuan.findAll({
+      where: {
+        user_id: req.user.id,
+        status: 'menunggu_perbaikan',
+      },
+      include: [JenisPengajuan, Document], // Menambahkan Document
+      order: [['updatedAt', 'DESC']],
+    });
+    res.json(needsRevision);
+  } catch (error) {
+     res.status(500).json({
+      message: "Error fetching submissions that need revision",
+      error: error.message,
+    });
+  }
+};
+
+
 // --- Document Generation Workflow ---
 
 // Helper function to get and populate template
