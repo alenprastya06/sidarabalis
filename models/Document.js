@@ -10,7 +10,15 @@ const Document = sequelize.define(
     file_url: { type: DataTypes.TEXT, allowNull: false }, // Required
     original_name: { type: DataTypes.STRING, allowNull: false }, // Required
     user_note: { type: DataTypes.TEXT, allowNull: true }, // Optional
-    status: { type: DataTypes.ENUM('pending', 'approved', 'rejected', 'menunggu_perbaikan'), defaultValue: 'pending' },
+    status: {
+      type: DataTypes.ENUM(
+        "pending",
+        "approved",
+        "rejected",
+        "menunggu_perbaikan"
+      ),
+      defaultValue: "pending",
+    },
     admin_note: { type: DataTypes.TEXT, allowNull: true }, // New field
   },
   { timestamps: false }

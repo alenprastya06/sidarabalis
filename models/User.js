@@ -12,6 +12,8 @@ const User = sequelize.define(
     status: { type: DataTypes.ENUM('pending', 'active'), defaultValue: 'pending' },
     activation_token: { type: DataTypes.STRING, allowNull: true },
     activation_token_expires: { type: DataTypes.DATE, allowNull: true },
+    reset_password_token: { type: DataTypes.STRING, allowNull: true },
+    reset_password_token_expires: { type: DataTypes.DATE, allowNull: true },
     current_session_id: { type: DataTypes.STRING, allowNull: true }, // New field
   },
   {
