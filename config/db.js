@@ -12,5 +12,6 @@ const sequelize = new Sequelize(
     logging: false,
   }
 );
+// hanya test
 
 export default sequelize;
