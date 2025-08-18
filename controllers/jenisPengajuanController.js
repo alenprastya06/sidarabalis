@@ -1,6 +1,7 @@
 import JenisPengajuan from "../models/JenisPengajuan.js";
 import Persyaratan from "../models/Persyaratan.js";
-import Pengajuan from "../models/Pengajuan.js"; // Import Pengajuan model
+import Pengajuan from "../models/Pengajuan.js";
+import { Op } from "sequelize"; // Import Pengajuan model
 
 export const createJenisPengajuan = async (req, res) => {
   const { name } = req.body;
@@ -25,7 +26,10 @@ export const getJenisPengajuan = async (req, res) => {
         ],
       }),
       Pengajuan.findAll({
-        where: { user_id: req.user.id },
+        where: { 
+          user_id: req.user.id,
+          status: { [Op.notIn]: ['completed', 'rejected'] } // Exclude completed and rejected
+        },
         attributes: ['id', 'status', 'jenis_pengajuan_id'],
       })
     ]);
