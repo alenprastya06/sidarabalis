@@ -529,7 +529,7 @@ export const generateEditedDocument = async (req, res) => {
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });
       const page = await browser.newPage();
-      await page.setContent(editedHtml, { waitUntil: "networkidle0" });
+      await page.setContent(editedHtml, { waitUntil: "load", timeout: 60000 });
       pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
     } catch (puppeteerError) {
       console.error("Error generating PDF with Puppeteer:", puppeteerError);
