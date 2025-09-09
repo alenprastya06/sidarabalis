@@ -32,7 +32,7 @@ const updatePengajuanStatus = async (pengajuanId) => {
   }
 
   const pengajuan = await Pengajuan.findByPk(pengajuanId);
-  if (!pengajuan || pengajuan.status === 'completed') return; // Do not change status if completed
+  if (!pengajuan || pengajuan.status === "completed") return; // Do not change status if completed
 
   let newPengajuanStatus = "pending";
   if (anyRejected) {
@@ -136,7 +136,7 @@ export const createPengajuan = async (req, res) => {
     });
 
     // Filter for mandatory documents only
-    const mandatoryPersyaratan = allPersyaratan.filter(p => p.wajib);
+    const mandatoryPersyaratan = allPersyaratan.filter((p) => p.wajib);
 
     const requiredDocumentNames = mandatoryPersyaratan.map(
       (p) => p.nama_dokument
@@ -156,7 +156,7 @@ export const createPengajuan = async (req, res) => {
     }
 
     // Check for unexpected documents against ALL possible persyaratan
-    const allPossibleDocumentNames = allPersyaratan.map(p => p.nama_dokument);
+    const allPossibleDocumentNames = allPersyaratan.map((p) => p.nama_dokument);
     const unexpectedDocuments = submittedDocumentTypes.filter(
       (docType) => !allPossibleDocumentNames.includes(docType)
     );
@@ -225,7 +225,7 @@ export const updatePengajuan = async (req, res) => {
         const docs = documents.map((d) => ({
           ...d,
           pengajuan_id: pengajuan.id,
-          status: 'pending', // Force status to pending on update
+          status: "pending", // Force status to pending on update
           admin_note: null, // Clear previous rejection notes
         }));
         await Document.bulkCreate(docs);
@@ -233,7 +233,7 @@ export const updatePengajuan = async (req, res) => {
     }
 
     // Set the parent submission status back to pending for re-review
-    await pengajuan.update({ status: 'pending' });
+    await pengajuan.update({ status: "pending" });
 
     const updatedPengajuan = await Pengajuan.findOne({
       where: { id: req.params.id },
@@ -328,18 +328,18 @@ export const getGeneratedDrafts = async (req, res) => {
       where: {
         draft_document_url: { [Op.ne]: null },
         final_document_url: { [Op.is]: null },
-        status: 'approved',
+        status: "approved",
       },
       include: [User, Owner, Lahan, JenisPengajuan],
     });
     res.json(drafts);
   } catch (error) {
-     res.status(500).json({
+    res.status(500).json({
       message: "Error fetching generated drafts",
       error: error.message,
     });
   }
-}
+};
 
 export const getCompletedDocuments = async (req, res) => {
   try {
@@ -347,14 +347,14 @@ export const getCompletedDocuments = async (req, res) => {
       where: {
         user_id: req.user.id,
         final_document_url: { [Op.ne]: null },
-        status: 'completed',
+        status: "completed",
       },
       include: [JenisPengajuan],
-      order: [['updatedAt', 'DESC']],
+      order: [["updatedAt", "DESC"]],
     });
     res.json(completed);
   } catch (error) {
-     res.status(500).json({
+    res.status(500).json({
       message: "Error fetching completed documents",
       error: error.message,
     });
@@ -366,20 +366,19 @@ export const getNeedsRevision = async (req, res) => {
     const needsRevision = await Pengajuan.findAll({
       where: {
         user_id: req.user.id,
-        status: 'menunggu_perbaikan',
+        status: "menunggu_perbaikan",
       },
       include: [JenisPengajuan, Document], // Menambahkan Document
-      order: [['updatedAt', 'DESC']],
+      order: [["updatedAt", "DESC"]],
     });
     res.json(needsRevision);
   } catch (error) {
-     res.status(500).json({
+    res.status(500).json({
       message: "Error fetching submissions that need revision",
       error: error.message,
     });
   }
 };
-
 
 // --- Document Generation Workflow ---
 
@@ -458,9 +457,11 @@ const getPopulatedHtml = async (pengajuanId, userId, userRole) => {
     kelengkapan_rt: pengajuan.Lahan?.alamat_rt || "",
     kelengkapan_rw: pengajuan.Lahan?.alamat_rw || "",
     kelengkapan_no_surat_pengantar: pengajuan.Lahan?.no_surat_rt || "",
-    kelengkapan_tanggal_surat_pengantar: formatTanggalLahir(pengajuan.Lahan?.tanggal_surat_rt),
+    kelengkapan_tanggal_surat_rt: formatTanggalLahir(
+      pengajuan.Lahan?.tanggal_surat_rt
+    ),
     kelengkapan_nib: pengajuan.Lahan?.nib || "",
-    kelengkapan_tanggal_surat_pengantar: formatTanggalSekarang(),
+    kelengkapan_tanggal_surat_rt: formatTanggalSekarang(),
     kelengkapan_luas_lahan: pengajuan.Lahan?.luas_lahan || "",
     kelengkapan_alamat_lahan: [
       pengajuan.Lahan?.alamat_rt ? `RT ${pengajuan.Lahan.alamat_rt}` : "",
@@ -482,7 +483,7 @@ const getPopulatedHtml = async (pengajuanId, userId, userRole) => {
   };
 
   for (const [key, value] of Object.entries(data)) {
-    const regex = new RegExp(`\\{\\{${key}\\\}\}`,"g");
+    const regex = new RegExp(`\\{\\{${key}\\\}\}`, "g");
     htmlContent = htmlContent.replace(regex, value || "");
   }
 
@@ -522,7 +523,10 @@ export const generateEditedDocument = async (req, res) => {
     }
 
     if (pengajuan.final_document_url) {
-      return res.status(400).json({ message: "Dokumen final sudah pernah dikirim. Tidak dapat membuat draf baru." });
+      return res.status(400).json({
+        message:
+          "Dokumen final sudah pernah dikirim. Tidak dapat membuat draf baru.",
+      });
     }
 
     let browser;
@@ -598,7 +602,9 @@ export const sendDocumentToUser = async (req, res) => {
     }
 
     if (pengajuan.final_document_url) {
-      return res.status(400).json({ message: "Dokumen final untuk pengajuan ini sudah pernah dikirim." });
+      return res.status(400).json({
+        message: "Dokumen final untuk pengajuan ini sudah pernah dikirim.",
+      });
     }
 
     if (!pengajuan.draft_document_url) {
