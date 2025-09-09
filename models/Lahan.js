@@ -7,6 +7,8 @@ const Lahan = sequelize.define(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     no_surat_rt: { type: DataTypes.STRING },
+    tanggal_surat_rt: { type: DataTypes.DATEONLY },
+    nib: { type: DataTypes.STRING },
     jenis_bangunan: { type: DataTypes.STRING },
     luas_lahan: { type: DataTypes.DECIMAL(10, 2) },
     alamat_rt: { type: DataTypes.STRING },

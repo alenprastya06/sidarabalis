@@ -1,0 +1,3 @@
+ALTER TABLE lahan
+ADD COLUMN tanggal_surat_rt DATE,
+ADD COLUMN nib VARCHAR(255);

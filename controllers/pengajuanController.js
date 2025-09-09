@@ -113,6 +113,7 @@ export const getPengajuanById = async (req, res) => {
 
 export const createPengajuan = async (req, res) => {
   const { jenis_pengajuan_id, owner, lahan, documents } = req.body;
+  const { tanggal_surat_rt, nib } = lahan || {};
   try {
     const existingPengajuan = await Pengajuan.findOne({
       where: {
@@ -198,6 +199,7 @@ export const createPengajuan = async (req, res) => {
 export const updatePengajuan = async (req, res) => {
   const { kode_pengajuan, jenis_pengajuan_id, owner, lahan, documents } =
     req.body;
+  const { tanggal_surat_rt, nib } = lahan || {};
   const pengajuan = await Pengajuan.findOne({ where: { id: req.params.id } });
 
   if (!pengajuan) {
@@ -456,6 +458,8 @@ const getPopulatedHtml = async (pengajuanId, userId, userRole) => {
     kelengkapan_rt: pengajuan.Lahan?.alamat_rt || "",
     kelengkapan_rw: pengajuan.Lahan?.alamat_rw || "",
     kelengkapan_no_surat_pengantar: pengajuan.Lahan?.no_surat_rt || "",
+    kelengkapan_tanggal_surat_pengantar: formatTanggalLahir(pengajuan.Lahan?.tanggal_surat_rt),
+    kelengkapan_nib: pengajuan.Lahan?.nib || "",
     kelengkapan_tanggal_surat_pengantar: formatTanggalSekarang(),
     kelengkapan_luas_lahan: pengajuan.Lahan?.luas_lahan || "",
     kelengkapan_alamat_lahan: [
