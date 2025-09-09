@@ -4,33 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Surat Keterangan</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      /* Custom font sizes for precise control */
-      .text-9pt {
-        font-size: 12pt;
-      }
-      .text-10pt {
-        font-size: 13pt;
-      }
-      .text-11pt {
-        font-size: 14pt;
-      }
-      .text-8pt {
-        font-size: 11pt;
-      }
-      .text-7pt {
-        font-size: 10pt;
-      }
-      /* Custom line heights */
-      .leading-tight-custom {
-        line-height: 1.4;
-      }
-      .leading-relaxed-custom {
-        line-height: 1.6;
+      /* Reset and base styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
 
-      /* Print specific styles */
+      body {
+        font-family: "Times New Roman", Times, serif;
+        font-size: 12pt;
+        line-height: 1.4;
+        color: black;
+        background-color: white;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Print styles */
       @media print {
         html,
         body {
@@ -68,143 +61,385 @@
         margin: 8mm 10mm 5mm 10mm;
       }
 
-      /* CSS Grid Layout untuk field - sangat stabil untuk Puppeteer */
-      .fields-container {
-        display: grid;
-        grid-template-columns: 200px auto 1fr; /* Kolom label, titik dua (auto), dan value (fleksibel) */
-        align-items: baseline;
-        row-gap: 2px; /* Jarak antar baris */
-        column-gap: 4px; /* Jarak antar kolom */
+      /* Custom font sizes */
+      .text-7pt {
+        font-size: 10pt;
+      }
+      .text-8pt {
+        font-size: 11pt;
+      }
+      .text-9pt {
+        font-size: 12pt;
+      }
+      .text-10pt {
+        font-size: 13pt;
+      }
+      .text-11pt {
+        font-size: 14pt;
       }
 
-      .field-value {
-        word-wrap: break-word;
-        word-break: break-word;
+      /* Custom line heights */
+      .leading-tight-custom {
+        line-height: 1.4;
+      }
+      .leading-relaxed-custom {
+        line-height: 1.6;
+      }
+      .leading-tight {
+        line-height: 1.25;
+      }
+      .leading-none {
+        line-height: 1;
+      }
+
+      /* Container */
+      .container {
+        width: 100%;
+        max-width: none;
+        background-color: white;
+        position: relative;
+        flex: 1;
+      }
+
+      /* Header table styles */
+      .header-table {
+        width: 100%;
+        border-collapse: collapse;
+        border-bottom: 2px solid black;
+        padding-bottom: 4px;
+        margin-bottom: 4px;
+      }
+
+      .header-cell-logo {
+        width: 80px;
+        padding-right: 8px;
+        vertical-align: top;
+      }
+
+      .header-cell-content {
+        text-align: center;
+        vertical-align: top;
+        width: auto;
+      }
+
+      .logo {
+        height: 64px;
+        width: auto;
+        display: block;
+      }
+
+      /* Header content */
+      .header-title {
+        font-weight: bold;
+        font-size: 13pt;
+        line-height: 1;
+        margin-bottom: 4px;
+      }
+
+      .header-info {
+        display: block;
+        text-align: left;
+        font-size: 11pt;
+        line-height: 1.4;
+      }
+
+      .header-info-row {
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .header-label {
+        display: inline-block;
+        width: 128px;
+        font-weight: 600;
+      }
+
+      .header-colon {
+        display: inline-block;
+        width: 8px;
+      }
+
+      .header-value {
+        display: inline-block;
+      }
+
+      /* Title styles */
+      .document-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 14pt;
+        text-decoration: underline;
+        margin-top: 12px;
+        margin-bottom: 6px;
+      }
+
+      .document-number {
+        text-align: center;
+        margin-bottom: 12px;
+        font-size: 12pt;
+      }
+
+      /* Content styles */
+      .intro-text {
+        margin-bottom: 6px;
+        text-align: justify;
+        font-size: 12pt;
+        line-height: 1.4;
+      }
+
+      /* Personal data grid */
+      .personal-data {
+        margin-left: 24px;
+        margin-bottom: 8px;
+        font-size: 12pt;
+        line-height: 1.25;
+      }
+
+      .data-grid {
+        display: grid;
+        grid-template-columns: 150px 10px 1fr;
+        gap: 0 8px;
+      }
+
+      .data-label {
+        font-weight: 500;
+      }
+
+      .data-colon {
+        /* Just for spacing */
+      }
+
+      .data-value {
+        /* Default styling */
+      }
+
+      /* Main content */
+      .main-content {
+        text-align: justify;
+        margin-top: 8px;
+        margin-bottom: 12px;
+        font-size: 12pt;
+        line-height: 1.6;
+        text-indent: 6mm;
+        text-justify: inter-word;
         hyphens: auto;
       }
 
-      /* Tidak perlu styling khusus untuk label dan colon karena grid akan mengaturnya */
+      .main-content p {
+        margin-bottom: 8px;
+      }
+
+      /* Signature section */
+      .signature-section {
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-start;
+        gap: 16px;
+        margin-top: 64px;
+        margin-bottom: 32px;
+      }
+
+      .qr-container img {
+        width: 64px;
+        height: 64px;
+        border: 1px solid #374151;
+        padding: 4px;
+        margin-top: 40px;
+      }
+
+      .signature-text {
+        text-align: center;
+        font-size: 12pt;
+        line-height: 1.4;
+      }
+
+      .signature-date {
+        margin-bottom: 4px;
+      }
+
+      .signature-position {
+        margin-bottom: 48px;
+      }
+
+      .signature-name {
+        font-weight: bold;
+        text-decoration: underline;
+      }
+
+      .signature-nip {
+        /* Default styling */
+      }
+
+      /* Footer */
+      footer {
+        width: 100%;
+        font-size: 10pt;
+        border-top: 1px solid #9ca3af;
+        padding-top: 8px;
+        line-height: 1.25;
+        text-align: justify;
+        background-color: white;
+        margin-top: auto;
+        margin-bottom: 0;
+        font-family: "Times New Roman", Times, serif;
+      }
+
+      footer p {
+        margin-bottom: 4px;
+      }
+
+      footer p:last-child {
+        margin-bottom: 0;
+      }
+
+      /* Utility classes */
+      .font-bold {
+        font-weight: bold;
+      }
+      .font-semibold {
+        font-weight: 600;
+      }
+      .font-medium {
+        font-weight: 500;
+      }
+      .underline {
+        text-decoration: underline;
+      }
+      .text-center {
+        text-align: center;
+      }
+      .text-left {
+        text-align: left;
+      }
+      .text-justify {
+        text-align: justify;
+      }
+      .mb-1 {
+        margin-bottom: 4px;
+      }
+      .mb-2 {
+        margin-bottom: 8px;
+      }
+      .mb-3 {
+        margin-bottom: 12px;
+      }
+      .mt-2 {
+        margin-top: 8px;
+      }
+      .mt-3 {
+        margin-top: 12px;
+      }
     </style>
   </head>
-  <body
-    class="font-serif m-0 p-0 text-9pt leading-tight-custom text-black bg-white relative min-h-screen flex flex-col"
-    style="font-family: 'Times New Roman', Times, serif"
-  >
-    <div class="w-full max-w-none bg-white relative flex-1">
-      <div class="table w-full border-b-2 border-black pb-1 mb-1">
-        <div class="table-row w-full">
-          <div class="table-cell align-top w-20 pr-2">
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Coat_of_arms_of_Jakarta.svg/1200px-Coat_of_arms_of_Jakarta.svg.png"
-              alt="Logo"
-              class="h-16 w-auto block"
-            />
-          </div>
-
-          <div class="table-cell align-top text-center w-auto">
-            <p class="font-bold text-10pt leading-none mb-1">
+  <body>
+    <div class="container">
+      <table class="header-table">
+        <tr>
+          <td class="header-cell-logo">
+            <img src="./jakarta.png" alt="Logo" class="logo" />
+          </td>
+          <td class="header-cell-content">
+            <p class="header-title">
               PEMERINTAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA
             </p>
-
-            <div class="block text-left text-8pt leading-tight-custom">
-              <div class="block mb-0.5">
-                <span class="inline-block w-32 font-semibold"
-                  >KOTA ADMINISTRASI</span
-                >
-                <span class="inline-block w-2">:</span>
-                <span class="inline-block">JAKARTA PUSAT</span>
+            <div class="header-info">
+              <div class="header-info-row">
+                <span class="header-label">KOTA ADMINISTRASI</span>
+                <span class="header-colon">:</span>
+                <span class="header-value">JAKARTA PUSAT</span>
               </div>
-              <div class="block mb-0.5">
-                <span class="inline-block w-32 font-semibold">KECAMATAN</span>
-                <span class="inline-block w-2">:</span>
-                <span class="inline-block">TANAH ABANG</span>
+              <div class="header-info-row">
+                <span class="header-label">KECAMATAN</span>
+                <span class="header-colon">:</span>
+                <span class="header-value">TANAH ABANG</span>
               </div>
-              <div class="block mb-0.5">
-                <span class="inline-block w-32 font-semibold">KELURAHAN</span>
-                <span class="inline-block w-2">:</span>
-                <span class="inline-block">KAMPUNG BALI</span>
+              <div class="header-info-row">
+                <span class="header-label">KELURAHAN</span>
+                <span class="header-colon">:</span>
+                <span class="header-value">KAMPUNG BALI</span>
               </div>
-              <div class="block mb-0.5">
-                <span class="inline-block w-32 font-semibold">ALAMAT</span>
-                <span class="inline-block w-2">:</span>
-                <span class="inline-block"
+              <div class="header-info-row">
+                <span class="header-label">ALAMAT</span>
+                <span class="header-colon">:</span>
+                <span class="header-value"
                   >Jl. Kampung Bali V No. 8 RT.005/08 021 3927391</span
                 >
               </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </td>
+        </tr>
+      </table>
 
-      <div class="text-center font-bold text-11pt underline mt-3 mb-1.5">
+      <div class="document-title">
         <p>SURAT KETERANGAN</p>
       </div>
-      <div class="text-center mb-3 text-9pt">
+      <div class="document-number">
         <p>NOMOR: {{letter_number}}</p>
       </div>
 
-      <div class="mb-1.5 text-justify text-9pt leading-tight-custom">
+      <div class="intro-text">
         <p>
           Yang bertanda tangan di bawah ini lurah Kelurahan Kampung Bali
           Menerangkan bahwa :
         </p>
       </div>
 
-      <div class="ml-6 mb-2 text-[12pt] leading-tight">
-        <div class="grid grid-cols-[150px_10px_1fr] gap-x-2">
-          <span class="font-medium">Nama Lengkap</span>
-          <span>:</span>
-          <span>{{recipient_nama_lengkap}}</span>
+      <div class="personal-data">
+        <div class="data-grid">
+          <span class="data-label">Nama Lengkap</span>
+          <span class="data-colon">:</span>
+          <span class="data-value">{{recipient_nama_lengkap}}</span>
 
-          <span class="font-medium">Tempat/Tanggal Lahir</span>
-          <span>:</span>
-          <span>{{recipient_tempat_lahir}} {{recipient_tanggal_lahir}}</span>
+          <span class="data-label">Tempat/Tanggal Lahir</span>
+          <span class="data-colon">:</span>
+          <span class="data-value"
+            >{{recipient_tempat_lahir}} {{recipient_tanggal_lahir}}</span
+          >
 
-          <span class="font-medium">Jenis Kelamin</span>
-          <span>:</span>
-          <span>{{recipient_jenis_kelamin}}</span>
+          <span class="data-label">Jenis Kelamin</span>
+          <span class="data-colon">:</span>
+          <span class="data-value">{{recipient_jenis_kelamin}}</span>
 
-          <span class="font-medium">Agama</span>
-          <span>:</span>
-          <span>{{recipient_agama}}</span>
+          <span class="data-label">Agama</span>
+          <span class="data-colon">:</span>
+          <span class="data-value">{{recipient_agama}}</span>
 
-          <span class="font-medium">Kewarganegaraan</span>
-          <span>:</span>
-          <span>{{recipient_kewarganegaraan}}</span>
+          <span class="data-label">Kewarganegaraan</span>
+          <span class="data-colon">:</span>
+          <span class="data-value">{{recipient_kewarganegaraan}}</span>
 
-          <span class="font-medium">No. KTP/SKTLD</span>
-          <span>:</span>
-          <span>{{recipient_no_ktp_sktld}}</span>
+          <span class="data-label">No. KTP/SKTLD</span>
+          <span class="data-colon">:</span>
+          <span class="data-value">{{recipient_no_ktp_sktld}}</span>
 
-          <span class="font-medium">Alamat</span>
-          <span>:</span>
-          <span>{{recipient_alamat_lengkap}}</span>
+          <span class="data-label">Alamat</span>
+          <span class="data-colon">:</span>
+          <span class="data-value">{{recipient_alamat_lengkap}}</span>
 
-          <span class="font-medium">Pekerjaan</span>
-          <span>:</span>
-          <span>{{recipient_pekerjaan}}</span>
+          <span class="data-label">Pekerjaan</span>
+          <span class="data-colon">:</span>
+          <span class="data-value">{{recipient_pekerjaan}}</span>
         </div>
       </div>
 
-      <div
-        class="text-justify mt-2 mb-3 text-9pt leading-relaxed-custom"
-        style="text-indent: 6mm"
-      >
+      <div class="main-content">
         <p>
-          Berdasarkan surat pengantar RT {{kelengkapan_rt}} RW
-          {{kelengkapan_rw}} No.{{kelengkapan_no_surat_pengantar}} Tanggal
-          {{kelengkapan_tanggal_surat_rt}}, Menerangkan Bahwa benar nama
+          Berdasarkan surat pengantar RT {{kelengkapan_rt}} RW{{kelengkapan_rw}}
+          No.{{kelengkapan_no_surat_pengantar}}
+          Tanggal{{kelengkapan_tanggal_surat_rt}}, Menerangkan Bahwa benar nama
           tersebut diatas adalah warga kami yang ingin mengajukan PM1.,
-          berdasarkan surat pernyataan tanggal
-          {{kelengkapan_tanggal_surat_rt}}, benar yang bersangkutan
-          diatas akan mengurus peningkatan Sertifikat Hak Guna Bangunan menjadi
-          Sertifikat Hak Milik dengan data Sertifikat Hak Guna Bangunan No. 1310
-          an. {{recipient_nama_lengkap}} dengan luas {{kelengkapan_luas_lahan}}
-          M2 yang terletak di {{kelengkapan_alamat_lahan}}. DKI Jakarta dan
-          objek tanah nya berdiri bangunan rumah tinggal. Surat keterangan ini
-          diperlukan untuk kepengurursan Administrasi Ke BPN.
-          <p>Apabila di kemudian hari keterangan/pengakuan yang
-          bersangkutan tidak benar/melanggar aturan yang berlaku/membuat
+          berdasarkan surat pernyataan tanggal {{kelengkapan_tanggal_surat_rt}},
+          benar yang bersangkutan diatas akan mengurus peningkatan Sertifikat
+          Hak Guna Bangunan menjadi Sertifikat Hak Milik dengan data Sertifikat
+          Hak Guna Bangunan No. 1310 an. {{recipient_nama_lengkap}} dengan luas
+          {{kelengkapan_luas_lahan}} M2 yang terletak di
+          {{kelengkapan_alamat_lahan}}. DKI Jakarta dan objek tanah nya berdiri
+          bangunan rumah tinggal. Surat keterangan ini diperlukan untuk
+          kepengurursan Administrasi Ke BPN.
+        </p>
+        <p>
+          Apabila di kemudian hari keterangan/pengakuan yang bersangkutan tidak
+          benar/melanggar aturan yang berlaku/membuat
           pengakuan/keterangan/keresahan/keberatan dari pihak yang berwenata
           sebagai pemilik yang memilafatkan surat keterangan ini, maka
           sepenuhnya menjadi tanggung jawab yang bersangkutan tanpa melibatkan
@@ -213,40 +448,31 @@
           peraturan yang berlaku. Demikian Surat Keterangan ini dibuat untuk
           dapat dipergunakan sebagaimana mestinya dan bukan merupakan
           rekomendasi dan berlaku selama 3 (tiga) bulan setelah tanggal
-          diterbitkan</p>
+          diterbitkan
         </p>
       </div>
 
-      <div class="flex justify-end items-start gap-4 mt-16 mb-8">
-        <div>
-          <img
-            src="https://www.avasam.com/wp-content/uploads/2019/10/qr-sample.png"
-            alt="QR Code"
-            class="w-16 h-16 border border-gray-800 p-1 mt-10"
-          />
+      <div class="signature-section">
+        <div class="qr-container">
+          <img src="./qr.png" alt="QR Code" />
         </div>
 
-        <div class="text-center text-9pt leading-tight-custom">
-          <p class="mb-1">Jakarta, {{issue_date}}</p>
-          <p class="mb-12">LURAH KAMPUNG BALI</p>
-          <p class="font-bold underline">Riska Handayani</p>
-          <p>NIP. 199608292004122001</p>
+        <div class="signature-text">
+          <p class="signature-date">Jakarta, {{issue_date}}</p>
+          <p class="signature-position">LURAH KAMPUNG BALI</p>
+          <p class="signature-name">Riska Handayani</p>
+          <p class="signature-nip">NIP. 199608292004122001</p>
         </div>
       </div>
     </div>
 
-    <footer
-      class="w-full text-7pt border-t border-gray-400 pt-2 leading-tight text-justify bg-white mt-auto mb-0"
-      style="font-family: 'Times New Roman', Times, serif"
-    >
-      <p class="mb-1">
+    <footer>
+      <p>
         Dokumen ini ditandatangani secara elektronik menggunakan sertifikat
         elektronik dari BSrE BSSN.
       </p>
-      <p class="mb-1">
-        Scan QR code yang ada pada izin ini untuk memeriksa keaslian data.
-      </p>
-      <p class="mb-0">Lindungi aku dan kamu dengan menjadi mandiri</p>
+      <p>Scan QR code yang ada pada izin ini untuk memeriksa keaslian data.</p>
+      <p>Lindungi aku dan kamu dengan menjadi mandiri</p>
     </footer>
   </body>
 </html>
