@@ -456,12 +456,9 @@ const getPopulatedHtml = async (pengajuanId, userId, userRole) => {
     recipient_pekerjaan: pengajuan.Owner?.pekerjaan || "",
     kelengkapan_rt: pengajuan.Lahan?.alamat_rt || "",
     kelengkapan_rw: pengajuan.Lahan?.alamat_rw || "",
-    kelengkapan_no_surat_pengantar: pengajuan.Lahan?.no_surat_rt || "",
-    kelengkapan_tanggal_surat_rt: formatTanggalLahir(
-      pengajuan.Lahan?.tanggal_surat_rt
-    ),
+    kelengkapan_no_surat_rt: pengajuan.Lahan?.no_surat_rt || "",
+    kelengkapan_tanggal_surat_rt: formatTanggalLahir(pengajuan.Lahan?.tanggal_surat_rt),
     kelengkapan_nib: pengajuan.Lahan?.nib || "",
-    kelengkapan_tanggal_surat_rt: formatTanggalSekarang(),
     kelengkapan_luas_lahan: pengajuan.Lahan?.luas_lahan || "",
     kelengkapan_alamat_lahan: [
       pengajuan.Lahan?.alamat_rt ? `RT ${pengajuan.Lahan.alamat_rt}` : "",
