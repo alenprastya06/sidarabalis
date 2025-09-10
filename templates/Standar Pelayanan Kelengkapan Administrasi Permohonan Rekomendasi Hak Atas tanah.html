@@ -229,14 +229,37 @@
         margin-bottom: 8px;
       }
 
-      /* Signature section */
+      /* Signature section - Updated for dual signatures */
       .signature-section {
         display: flex;
-        justify-content: flex-end;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-top: 48px;
+        margin-bottom: 32px;
+        gap: 32px;
+      }
+
+      .signature-container {
+        display: flex;
         align-items: flex-start;
         gap: 16px;
-        margin-top: 64px;
-        margin-bottom: 32px;
+        flex: 1;
+      }
+
+      .signature-container.camat {
+        justify-content: flex-start;
+      }
+
+      .signature-container.lurah {
+        justify-content: flex-end;
+      }
+
+      .signature-container.camat .qr-container {
+        order: 1;
+      }
+
+      .signature-container.camat .signature-text {
+        order: 2;
       }
 
       .qr-container img {
@@ -429,14 +452,15 @@
       <div class="main-content">
         <p>
           Berdasarkan surat pengantar RT {{kelengkapan_rt}} RW{{kelengkapan_rw}}
-          No.{{kelengkapan_no_surat_pengantar}}
-          Tanggal{{kelengkapan_tanggal_surat_rt}}, Menerangkan Bahwa benar nama
-          tersebut diatas adalah warga kami yang ingin mengajukan PM1.,
-          berdasarkan surat pernyataan tanggal {{kelengkapan_tanggal_surat_rt}},
-          benar yang bersangkutan diatas akan mengurus peningkatan Sertifikat
-          Hak Guna Bangunan menjadi Sertifikat Hak Milik dengan data Sertifikat
-          Hak Guna Bangunan No. 1310 an. {{recipient_nama_lengkap}} dengan luas
-          {{kelengkapan_luas_lahan}} M2 yang terletak di
+          No.{{kelengkapan_no_surat_pengantar}} Tanggal
+          {{kelengkapan_tanggal_surat_rt}}, Menerangkan Bahwa benar nama
+          tersebut diatas adalah warga kami yang ingin mengajukan PM1.
+          berdasarkan surat pernyataan tanggal
+          {{kelengkapan_tanggal_surat_pernyataan}}, benar yang bersangkutan
+          diatas akan mengurus peningkatan Sertifikat Hak Guna Bangunan dengan
+          NIB.{{kelengkapan_nib}} menjadi Sertifikat Hak Milik dengan data
+          Sertifikat Hak Guna Bangunan Atas nama {{recipient_nama_lengkap}}
+          dengan luas {{kelengkapan_luas_lahan}} M2 yang terletak di
           {{kelengkapan_alamat_lahan}}. DKI Jakarta dan objek tanah nya berdiri
           bangunan rumah tinggal. Surat keterangan ini diperlukan untuk
           kepengurursan Administrasi Ke BPN.
@@ -456,19 +480,21 @@
         </p>
       </div>
 
+      <!-- Updated signature section with dual signatures -->
       <div class="signature-section">
-        <div class="qr-container">
-          <img
-            src="https://www.avasam.com/wp-content/uploads/2019/10/qr-sample.png"
-            alt="QR Code"
-          />
-        </div>
-
-        <div class="signature-text">
-          <p class="signature-date">Jakarta, {{issue_date}}</p>
-          <p class="signature-position">LURAH KAMPUNG BALI</p>
-          <p class="signature-name">Riska Handayani</p>
-          <p class="signature-nip">NIP. 199608292004122001</p>
+        <div class="signature-container lurah">
+          <div class="qr-container">
+            <img
+              src="https://www.avasam.com/wp-content/uploads/2019/10/qr-sample.png"
+              alt="QR Code Lurah"
+            />
+          </div>
+          <div class="signature-text">
+            <p class="signature-date">Jakarta, {{issue_date}}</p>
+            <p class="signature-position">LURAH KAMPUNG BALI</p>
+            <p class="signature-name">Riska Handayani</p>
+            <p class="signature-nip">NIP. 198608292004122001</p>
+          </div>
         </div>
       </div>
     </div>
